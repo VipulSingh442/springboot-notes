@@ -1,0 +1,151 @@
+# ⚙️ Exception Handling in Spring Boot
+
+> Handle exceptions in a centralized way to return clean and consistent API responses.
+
+---
+
+## 🧠 Concept
+
+Spring Boot provides annotations to handle exceptions globally instead of writing try-catch blocks in every controller.
+
+* `@ExceptionHandler` → handles specific exceptions
+* `@RestControllerAdvice` → applies global exception handling across all controllers
+
+👉 This improves code readability and maintainability
+
+---
+
+## 🧩 Components Used
+
+* Custom Exception (`ResourceNotFoundException`)
+* Global Handler (`@RestControllerAdvice`)
+* API Response Wrapper (`ApiError`)
+
+---
+
+## ⚙️ Approach
+
+👉 Create a custom exception class
+
+👉 Use `@RestControllerAdvice` for global handling
+
+👉 Use `@ExceptionHandler` for:
+
+* Specific exceptions
+* Generic exceptions
+* Validation errors
+
+👉 Return structured response using `ApiError`
+
+---
+
+## 💻 Code
+
+### 🔹 Global Exception Handler
+
+```java id="gexh01"
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> resourceNotFound(ResourceNotFoundException exception)
+    {          
+        ApiError apiError = ApiError.builder()
+                .httpStatusCode(HttpStatus.NOT_FOUND.value())
+                .message(exception.getMessage())
+                .build();
+
+        return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleInternalServerError(Exception exception)
+    {
+        ApiError apiError = ApiError.builder()
+                .httpStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .message(exception.getMessage())
+                .build();
+
+        return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidationError(MethodArgumentNotValidException exception)
+    {
+        List<String> errors = exception
+                .getBindingResult()
+                .getAllErrors()
+                .stream()
+                .map((error) -> error.getDefaultMessage())
+                .collect(Collectors.toList());
+
+        ApiError apiError = ApiError.builder()
+                .httpStatusCode(HttpStatus.BAD_REQUEST.value())
+                .message("failed input validation")
+                .subError(errors)
+                .build();
+
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    }
+}
+```
+
+---
+
+### 🔹 Custom Exception
+
+```java id="cust01"
+package com.coddingshuttle.mvc.module2introduction.customexceptions;
+
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+### 🔹 API Error Response
+
+```java id="apierr01"
+package com.coddingshuttle.mvc.module2introduction.advices;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+@Builder
+public class ApiError {
+
+    private Integer httpStatusCode;
+    private String message;
+    private List<String> subError;
+}
+```
+
+---
+
+## ⏱️ Key Points
+
+* Centralized exception handling improves code cleanliness
+* Custom exceptions make error handling more meaningful
+* `ApiError` ensures consistent API responses
+* Validation errors are handled separately with detailed messages
+
+---
+
+## ❗ Learnings
+
+* Correct annotation is `@RestControllerAdvice` (not `@RestAdvices`)
+* Always return appropriate HTTP status codes
+* Validation errors should include all field-level messages
+* Avoid handling exceptions inside controllers
+
+---
+
+## 🔑 Summary
+
+👉 Global exception handling = cleaner controllers + better API responses
