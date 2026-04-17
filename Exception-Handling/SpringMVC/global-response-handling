@@ -1,0 +1,192 @@
+# 🌍 Global Response Handling (ResponseBodyAdvice)
+
+---
+
+## 📌 Concept
+
+Global Response Handling ensures that **all API responses follow a common structure**.
+
+Instead of returning raw data:
+{
+"name": "Vipul"
+}
+
+We return:
+{
+"status": "success",
+"message": "Request successful",
+"data": { "name": "Vipul" }
+}
+
+👉 Achieved using `ResponseBodyAdvice`
+
+---
+
+## ⚙️ Approach
+
+### Step 1: Create ApiResponse Wrapper
+
+```java
+public class ApiResponse<T> {
+
+    private String status;
+    private String message;
+    private T data;
+
+    public ApiResponse(String status, String message, T data) {
+        this.status = status;
+        this.message = message;
+        this.data = data;
+    }
+}
+```
+
+---
+
+### Step 2: Implement ResponseBodyAdvice
+
+```java
+@RestControllerAdvice
+public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
+```
+
+---
+
+## ⚙️ Core Methods
+
+---
+
+### 1️⃣ supports()
+
+#### Concept
+
+Determines whether global response handling should be applied.
+
+#### Code
+
+```java
+@Override
+public boolean supports(MethodParameter returnType,
+                        Class<? extends HttpMessageConverter<?>> converterType) {
+    return true;
+}
+```
+
+#### Understanding
+
+* return true → apply to all responses
+* return false → skip
+
+#### Parameters
+
+* MethodParameter returnType → info about controller method
+* converterType → type of response converter (JSON, String, etc.)
+
+---
+
+### 2️⃣ beforeBodyWrite()
+
+#### Concept
+
+Modifies the response body before sending to client.
+
+#### Code
+
+```java
+@Override
+public Object beforeBodyWrite(
+        Object body,
+        MethodParameter returnType,
+        MediaType contentType,
+        Class<? extends HttpMessageConverter<?>> converterType,
+        ServerHttpRequest request,
+        ServerHttpResponse response) {
+
+    return new ApiResponse<>("success", "Request successful", body);
+}
+```
+
+#### Parameters
+
+* body → actual response from controller ⭐
+* returnType → controller method details
+* contentType → response format (JSON/text)
+* converterType → message converter
+* request → HTTP request info
+* response → HTTP response control
+
+---
+
+## ⚠️ Important Cases
+
+### Avoid Double Wrapping
+
+```java
+if (body instanceof ApiResponse) {
+    return body;
+}
+```
+
+---
+
+### Handle String Response
+
+```java
+if (body instanceof String) {
+    return "{\"status\":\"success\",\"message\":\"OK\",\"data\":\"" + body + "\"}";
+}
+```
+
+---
+
+## 💻 Final Implementation
+
+```java
+@RestControllerAdvice
+public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
+
+    @Override
+    public boolean supports(MethodParameter returnType,
+                            Class<? extends HttpMessageConverter<?>> converterType) {
+        return true;
+    }
+
+    @Override
+    public Object beforeBodyWrite(
+            Object body,
+            MethodParameter returnType,
+            MediaType contentType,
+            Class<? extends HttpMessageConverter<?>> converterType,
+            ServerHttpRequest request,
+            ServerHttpResponse response) {
+
+        if (body instanceof ApiResponse) {
+            return body;
+        }
+
+        return new ApiResponse<>("success", "OK", body);
+    }
+}
+```
+
+---
+
+## 🔑 Key Points
+
+* ResponseBodyAdvice → intercepts all responses
+* supports() → decides apply or not
+* beforeBodyWrite() → modifies response
+* body = actual controller output ⭐
+* Use ApiResponse<T> for consistency
+* Avoid double wrapping
+
+---
+
+## 🧠 Learnings
+
+* Provides consistent API response format
+* Reduces boilerplate in controllers
+* Used in production-level Spring Boot apps
+* Works with @RestControllerAdvice
+
+---
