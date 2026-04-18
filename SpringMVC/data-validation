@@ -1,0 +1,235 @@
+# 🌍 Data Validation & Custom Validation (Spring Boot)
+
+---
+
+## 📌 Concept
+
+Validation ensures that **incoming request data is correct, safe, and follows rules** before processing.
+
+👉 Prevents:
+
+* Invalid input
+* Bad data in DB
+* Unexpected runtime errors
+
+---
+
+## 🧠 Types of Validation
+
+### 1. Built-in Validation (JSR-380 / Jakarta Validation)
+
+Use annotations like:
+
+* `@NotNull`
+* `@NotBlank`
+* `@Size`
+* `@Email`
+* `@Min`, `@Max`
+
+---
+
+### 2. Custom Validation
+
+Used when:
+
+* Business rules are complex
+* Built-in annotations are not enough
+
+---
+
+## ⚙️ Approach (Built-in Validation)
+
+### 🔹 Step 1: Add Dependency
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+```
+
+---
+
+### 🔹 Step 2: Apply Annotations on DTO
+
+```java
+public class DepartmentDto {
+
+    @NotBlank(message = "Department name cannot be empty")
+    private String name;
+
+    @NotBlank(message = "Department code cannot be empty")
+    private String code;
+
+    @Email(message = "Invalid email format")
+    private String email;
+}
+```
+
+---
+
+### 🔹 Step 3: Enable Validation in Controller
+
+```java
+@PostMapping
+public ResponseEntity<DepartmentDto> createDepartment(
+        @RequestBody @Valid DepartmentDto dto) {
+
+    return ResponseEntity.ok(service.create(dto));
+}
+```
+
+---
+
+## 🔥 What happens internally
+
+```text
+Client Request → @Valid → Validation Engine
+                     ↓
+            Error? → Exception thrown
+                     ↓
+        Global Exception Handler → Error Response
+```
+
+---
+
+## ⚠️ Important Exception
+
+Spring throws:
+
+```java
+MethodArgumentNotValidException
+```
+
+👉 Handle it in `@ControllerAdvice`
+
+---
+
+## ⚙️ Global Validation Error Handler
+
+```java
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<Map<String, String>> handleValidationException(
+        MethodArgumentNotValidException ex) {
+
+    Map<String, String> errors = new HashMap<>();
+
+    ex.getBindingResult().getFieldErrors()
+            .forEach(error ->
+                    errors.put(error.getField(), error.getDefaultMessage())
+            );
+
+    return ResponseEntity.badRequest().body(errors);
+}
+```
+
+---
+
+## 🧠 Custom Validation (Advanced)
+
+---
+
+## 📌 When to use
+
+* Unique field validation (e.g., department name)
+* Conditional validation
+* Cross-field validation
+
+---
+
+## ⚙️ Steps to Create Custom Validation
+
+---
+
+### 🔹 Step 1: Create Annotation
+
+```java
+@Documented
+@Constraint(validatedBy = DepartmentCodeValidator.class)
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ValidDepartmentCode {
+
+    String message() default "Invalid department code";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+}
+```
+
+---
+
+### 🔹 Step 2: Create Validator Class
+
+```java
+public class DepartmentCodeValidator
+        implements ConstraintValidator<ValidDepartmentCode, String> {
+
+    @Override
+    public boolean isValid(String value, ConstraintValidatorContext context) {
+
+        if (value == null) return false;
+
+        return value.startsWith("DEPT-");
+    }
+}
+```
+
+---
+
+### 🔹 Step 3: Use Annotation
+
+```java
+public class DepartmentDto {
+
+    @ValidDepartmentCode
+    private String code;
+}
+```
+
+---
+
+## 🧠 Cross-field Validation (Class Level)
+
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = CustomValidator.class)
+public @interface ValidDepartment {
+}
+```
+
+👉 Used when validation depends on multiple fields
+
+---
+
+## 🔥 Best Practices
+
+* ✔️ Always validate at DTO level
+* ✔️ Use `@Valid` in controller
+* ✔️ Keep validation out of entity
+* ✔️ Use custom validation for business rules
+* ✔️ Use global exception handler
+
+---
+
+## 🚫 Common Mistakes
+
+* ❌ Forgetting `@Valid`
+* ❌ Validating in controller manually
+* ❌ Putting validation in service layer
+* ❌ Throwing exceptions for validation manually
+
+---
+
+## 📌 Learnings
+
+* Validation improves API reliability
+* Built-in annotations cover most cases
+* Custom validation handles complex rules
+* Global exception handling centralizes errors
+
+---
+
+
