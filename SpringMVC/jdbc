@@ -1,0 +1,311 @@
+
+📘 JDBC (Java Database Connectivity)
+
+📌 Concept
+JDBC stands for Java Database Connectivity
+It is an API in Java used to connect Java applications with databases
+Helps to:
+Execute SQL queries
+Retrieve and update data
+🔹 Who provides what?
+Java vendors → Provide JDBC API (interfaces)
+Database vendors (MySQL, Oracle, etc.) → Provide Driver implementation
+
+🧩 Important Interfaces
+Driver
+Connection
+Statement
+PreparedStatement
+ResultSet
+
+⚙️ JDBC Flow (Steps)
+Load Driver Class
+Create Connection
+Create Statement
+Execute Query
+Close Connection
+
+🚀 Step-by-Step Explanation
+
+1️⃣ Load Driver Class
+📌 Concept
+Driver class is provided by DB vendor
+Example (MySQL driver):
+com.mysql.cj.jdbc.Driver
+
+Driver implements java.sql.Driver
+Automatically registers with DriverManager
+📌 Ways to Load
+✔️ Old way:
+Class.forName("com.mysql.cj.jdbc.Driver");
+
+✔️ Modern:
+Auto-loaded (no need explicitly)
+
+2️⃣ Create Connection Object
+📌 Concept
+Establish connection with DB
+Done using DriverManager
+📌 Syntax
+Connection con = DriverManager.getConnection(url, username, password);
+
+📌 Example
+Connection con = DriverManager.getConnection(
+    "jdbc:mysql://localhost:3306/jdbc10",
+    "root",
+    "password"
+);
+
+
+3️⃣ Create Statement Object
+📌 Concept
+Used to execute SQL queries
+📌 Types
+Type
+Use
+Statement
+Simple queries
+PreparedStatement
+Dynamic queries (recommended)
+CallableStatement
+Stored procedures
+
+📌 Syntax
+Statement st = con.createStatement();
+
+
+4️⃣ Execute Queries
+
+🔹 Types of Queries
+🟢 DDL (Structure)
+CREATE, ALTER, DROP
+🔵 DML (Data)
+INSERT, UPDATE, DELETE
+🟡 SELECT (Fetch data)
+
+🔹 Execute Methods
+✔️ For SELECT
+ResultSet rs = st.executeQuery("SELECT * FROM employee");
+
+✔️ For INSERT/UPDATE/DELETE
+int rows = st.executeUpdate("INSERT INTO employee VALUES(...)");
+
+
+5️⃣ ResultSet (Handling Data)
+📌 Concept
+Stores result of SELECT query
+Works like a cursor
+📌 Default Behavior
+Forward only
+Starts before first row (index = -1)
+
+🔹 Navigation Methods
+rs.next();       // move to next row
+rs.first();      // first row
+rs.last();       // last row
+rs.previous();   // previous row
+rs.absolute(n);  // go to nth row
+rs.relative(n);  // move n steps
+
+
+🔹 Fetch Data
+while(rs.next()) {
+    int id = rs.getInt(1);
+    String name = rs.getString(2);
+}
+
+
+🔹 Scrollable ResultSet
+Statement st = con.createStatement(
+    ResultSet.TYPE_SCROLL_SENSITIVE,
+    ResultSet.CONCUR_UPDATABLE
+);
+
+
+🧪 Complete Example
+import java.sql.*;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            // 1. Load Driver
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
+            // 2. Create Connection
+            Connection con = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/test",
+                "root",
+                "password"
+            );
+
+            // 3. Create Statement
+            Statement st = con.createStatement();
+
+            // 4. Execute Query
+            st.executeUpdate("CREATE TABLE employee (id INT PRIMARY KEY)");
+
+            st.executeUpdate("INSERT INTO employee VALUES (101)");
+
+            ResultSet rs = st.executeQuery("SELECT * FROM employee");
+
+            // 5. Process Result
+            while(rs.next()) {
+                System.out.println(rs.getInt(1));
+            }
+
+            // 6. Close Connection
+            con.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
+# 📘 JDBC – Dynamic Query, PreparedStatement & SELECT (SCN)
+
+---
+
+## 📌 Concept
+
+### 🔹 Static Query (Statement)
+
+* Query is fixed
+* No parameters
+
+```sql
+SELECT * FROM employee;
+```
+
+---
+
+### 🔹 Dynamic Query
+
+* Query changes based on input
+* Uses **placeholders (?)**
+* Implemented using **PreparedStatement**
+
+```sql
+SELECT * FROM employee WHERE id = ?;
+```
+
+---
+
+## ⚙️ Approach
+
+👉 Use **PreparedStatement** instead of Statement
+Why?
+
+* Prevents SQL Injection ✅
+* Better performance (precompiled) ✅
+* Handles dynamic input safely ✅
+
+---
+
+## 🧩 PreparedStatement
+
+### 📌 Syntax
+
+```java
+PreparedStatement ps = con.prepareStatement("SELECT * FROM employee WHERE id = ?");
+```
+
+---
+
+### 📌 Setting Values
+
+```java
+ps.setInt(1, 101);      // index starts from 1
+ps.setString(2, "Vipul");
+```
+
+---
+
+## 🔍 Executing SELECT Query
+
+---
+
+### 📌 Using Statement (Basic)
+
+```java
+Statement st = con.createStatement();
+ResultSet rs = st.executeQuery("SELECT * FROM employee");
+```
+
+---
+
+### 📌 Using PreparedStatement (Recommended)
+
+```java
+PreparedStatement ps = con.prepareStatement(
+    "SELECT * FROM employee WHERE id = ?"
+);
+
+ps.setInt(1, 101);
+
+ResultSet rs = ps.executeQuery();
+```
+
+---
+
+## 🔄 Processing ResultSet
+
+```java
+while(rs.next()) {
+    int id = rs.getInt("id");
+    String name = rs.getString("name");
+
+    System.out.println(id + " " + name);
+}
+```
+
+---
+
+## 💻 Code
+
+```java
+import java.sql.*;
+
+public class App {
+    public static void main(String[] args) {
+        try {
+            Connection con = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/test",
+                "root",
+                "password"
+            );
+
+            // Dynamic Query using PreparedStatement
+            PreparedStatement ps = con.prepareStatement(
+                "SELECT * FROM employee WHERE id = ?"
+            );
+
+            ps.setInt(1, 101);
+
+            ResultSet rs = ps.executeQuery();
+
+            while(rs.next()) {
+                System.out.println(rs.getInt("id") + " " + rs.getString("name"));
+            }
+
+            con.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
