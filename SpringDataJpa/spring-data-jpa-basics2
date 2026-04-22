@@ -1,0 +1,235 @@
+🧾 Spring Data JPA – Key Features (SCN Format)
+
+1. 🧠 Concept
+Spring Data JPA is a layer on top of JPA that reduces boilerplate code by providing ready-made repository implementations and intelligent query handling.
+
+2. ⚙️ Core Features
+🔹 1. Repository Abstraction
+No need to write DAO layer manually
+Just create interface:
+public interface UserRepository extends JpaRepository<User, Long> {}
+
+
+🔹 2. Built-in CRUD Methods
+Ready-to-use methods:
+save()
+findById()
+findAll()
+deleteById()
+
+🔹 3. Query Method Naming (Auto Query Generation)
+Queries generated from method names:
+List<User> findByName(String name);
+List<User> findByAgeGreaterThan(int age);
+
+
+🔹 4. Pagination & Sorting
+Built-in support:
+Page<User> findAll(Pageable pageable);
+
+
+🔹 5. Custom Queries (@Query)
+Write JPQL or native SQL:
+@Query("SELECT u FROM User u WHERE u.email = :email")
+User findByEmail(String email);
+
+
+🔹 6. JPA Integration
+Works with JPA providers like Hibernate
+Handles EntityManager internally
+
+🔹 7. Transaction Management
+Integrated with Spring’s @Transactional
+Ensures ACID properties
+
+🔹 8. Auditing Support
+Tracks changes automatically:
+Created Date
+Last Modified Date
+@CreatedDate
+@LastModifiedDate
+
+
+🔹 9. Derived Delete & Update Queries
+void deleteByName(String name);
+
+
+🔹 10. Projection Support
+Fetch only required fields:
+interface UserNameOnly {
+    String getName();
+}
+
+
+3. 🚀 Approach (How It Works)
+Define Entity
+Create Repository Interface
+Extend JpaRepository
+Inject and use in Service
+Spring auto-generates implementation
+
+4. 💻 Code Example
+public interface ProductRepository extends JpaRepository<Product, Long> {
+    List<Product> findByTitle(String title);
+}
+
+@Autowired
+private ProductRepository repo;
+
+repo.save(new Product());
+repo.findByTitle("Phone");
+
+
+5. 🎯 Key Points
+Eliminates boilerplate DAO code
+Auto query generation
+Powerful abstraction over JPA
+Supports pagination & sorting
+Integrates seamlessly with Spring
+
+6. 📌 Learnings
+Focus on method naming rules (very important for interviews)
+Use custom queries when logic becomes complex
+Best used with Hibernate + Spring Boot
+
+
+🧾 Spring Data JPA – Rules for Auto Query Generation (Derived Queries)
+
+1. 🧠 Concept
+Auto Query Generation (Derived Queries) lets Spring Data JPA create queries from method names—no @Query needed.
+👉 Example:
+List<User> findByName(String name);
+
+➡ Automatically generates query behind the scenes.
+
+2. ⚙️ Core Rules
+
+🔹 1. Method Must Start with Keywords
+Common prefixes:
+Keyword
+Purpose
+findBy
+Fetch data
+readBy
+Same as find
+getBy
+Same as find
+countBy
+Count records
+existsBy
+Check existence
+deleteBy
+Delete records
+
+
+🔹 2. Use Entity Field Names (NOT Column Names)
+❌ Wrong:
+findByUser_name(String name);
+
+✅ Correct:
+findByName(String name);
+
+
+🔹 3. Follow CamelCase Naming
+Field names must match exactly:
+findByFirstName(String firstName);
+
+
+🔹 4. Combine Conditions Using Keywords
+Keyword
+Meaning
+And
+AND condition
+Or
+OR condition
+
+findByNameAndAge(String name, int age);
+findByNameOrEmail(String name, String email);
+
+
+🔹 5. Use Comparison Keywords
+Keyword
+Example
+GreaterThan
+findByAgeGreaterThan(int age)
+LessThan
+findByPriceLessThan(double price)
+Between
+findByAgeBetween(int a, int b)
+
+
+🔹 6. Pattern Matching Keywords
+Keyword
+Example
+Like
+findByNameLike(String name)
+Containing
+findByNameContaining(String name)
+StartingWith
+findByNameStartingWith(String prefix)
+EndingWith
+findByNameEndingWith(String suffix)
+
+
+🔹 7. Null & Boolean Handling
+findByEmailIsNull();
+findByActiveTrue();
+findByActiveFalse();
+
+
+🔹 8. Sorting Support
+findByNameOrderByAgeAsc(String name);
+findByNameOrderByAgeDesc(String name);
+
+
+🔹 9. Nested Property Traversal
+Works with relationships:
+findByDepartmentName(String deptName);
+
+
+🔹 10. Return Types Supported
+Type
+Usage
+List<T>
+Multiple results
+Optional<T>
+Single result
+Page<T>
+Pagination
+long
+Count
+
+
+3. 🚀 Approach
+Start with keyword (findBy)
+Add field name (exact match)
+Add condition (And, GreaterThan, etc.)
+Match parameters with fields
+Choose correct return type
+
+4. 💻 Examples
+List<Product> findByTitle(String title);
+
+List<Product> findByPriceGreaterThan(double price);
+
+List<Product> findByTitleAndPrice(String title, double price);
+
+boolean existsBySku(String sku);
+
+long countByCategory(String category);
+
+
+5. 🎯 Key Points
+No SQL required
+Based on method naming convention
+Uses entity fields only
+Supports conditions, sorting, pagination
+Best for simple queries
+
+6. 📌 Learnings
+Naming must be exact & precise
+Long method names = complex logic → use @Query instead
+Most used in real apps for quick CRUD + filtering
+
+
+
