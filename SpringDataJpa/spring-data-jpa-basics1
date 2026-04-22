@@ -1,0 +1,551 @@
+
+📘 Spring Data JPA – Foundation (SCN)
+
+📌 Concept
+🔹 Database
+A place to store structured data
+Example: MySQL, PostgreSQL
+
+🔹 JDBC (Java Database Connectivity)
+Low-level API to interact with DB
+You write:
+SQL queries
+Connection handling
+Result parsing
+👉 Problem:
+Boilerplate code ❌
+Manual mapping ❌
+
+🔹 ORM (Object Relational Mapping)
+Converts:
+Java Object ↔ Database Table
+👉 Example:
+Employee obj  ↔  employee table
+
+👉 Removes need to manually write SQL for basic operations
+
+🔹 JPA (Java Persistence API)
+Specification (interface) for ORM
+Defines:
+How ORM should work
+Rules & annotations
+👉 Important:
+JPA is NOT implementation
+
+🔹 Hibernate
+Implementation of JPA
+Actually does the work:
+Converts objects → SQL
+Executes queries
+Manages caching, transactions
+👉 So:
+JPA = Rules
+Hibernate = Implementation
+
+
+🔹 Spring Data JPA
+Abstraction on top of JPA (Hibernate)
+👉 Removes:
+Boilerplate code
+Manual DAO implementation
+👉 You just write:
+interface EmployeeRepo extends JpaRepository<Employee, Integer> {}
+
+
+⚙️ Flow (Very Important 🔥)
+
+🔄 Full Flow
+Your Code
+   ↓
+Spring Data JPA
+   ↓
+JPA (Specification)
+   ↓
+Hibernate (Implementation)
+   ↓
+JDBC
+   ↓
+Database
+
+
+🧠 What Each Layer Does
+
+1️⃣ Your Code (Service/Controller)
+Calls repository methods
+repo.save(employee);
+
+
+2️⃣ Spring Data JPA
+Provides ready-made methods:
+save()
+findById()
+delete()
+👉 No implementation needed
+
+3️⃣ JPA
+Defines rules:
+@Entity
+@Id
+@Table
+
+4️⃣ Hibernate
+Converts:
+employee object → SQL query
+
+👉 Example:
+INSERT INTO employee VALUES(...)
+
+
+5️⃣ JDBC
+Sends SQL to database
+Gets result back
+
+6️⃣ Database
+Executes query
+Returns data
+
+🔁 End-to-End Example Flow
+repo.save(emp);
+
+👉 Internally:
+Spring Data JPA receives call
+Uses Hibernate
+Hibernate generates SQL
+JDBC executes SQL
+DB stores data
+Response flows back
+
+🔥 Key Points (Interview)
+JDBC = low-level API
+ORM = Object ↔ Table mapping
+JPA = specification
+Hibernate = implementation of JPA
+Spring Data JPA = abstraction over JPA
+👉 Most Important Line:
+“Spring Data JPA uses Hibernate internally, which uses JDBC to interact with the database.”
+
+🧠 Learnings
+You never directly use JDBC in Spring Boot (normally)
+Hibernate handles SQL generation
+Spring Data JPA removes boilerplate DAO code
+Flow understanding = Top interview question
+
+⚠️ Reality Check (Important)
+If you think:
+“Spring Data JPA means no SQL at all”
+That’s wrong ❌
+For complex queries → you still write SQL / JPQL
+
+
+
+
+
+
+📘 Spring Data JPA – Configuration (SCN)
+
+📌 Concept
+Spring Boot auto-configures JPA, but we must provide:
+DB connection details
+JPA behavior settings
+
+⚙️ 5 Important Properties (Must Know 🔥)
+
+1️⃣ Database URL
+spring.datasource.url=jdbc:mysql://localhost:3306/test
+
+👉 Meaning:
+Tells Spring:
+Which database to connect
+DB type = MySQL
+Port = 3306
+DB name = test
+
+2️⃣ Username
+spring.datasource.username=root
+
+👉 Meaning:
+Database login username
+
+3️⃣ Password
+spring.datasource.password=your_password
+
+👉 Meaning:
+Database login password
+
+4️⃣ Hibernate DDL Auto
+spring.jpa.hibernate.ddl-auto=update
+
+👉 Meaning:
+Controls table creation
+Value
+Use
+create
+Drop & create table every time
+update
+Update existing table ✅
+validate
+Check schema only
+none
+Do nothing
+
+
+5️⃣ Show SQL
+spring.jpa.show-sql=true
+
+👉 Meaning:
+Shows generated SQL queries in console
+Useful for debugging
+spring.jpa.properties.hibernate.format_sql=true 
+👉 Meaning:
+Formats SQL into multiple lines
+Improves readability
+
+🧠 Optional (But Important)
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+
+👉 Meaning:
+Tells Hibernate which SQL syntax to use
+
+🔥 Key Points (Interview)
+URL = DB location
+Username/Password = authentication
+ddl-auto = schema control
+show-sql = debugging
+Hibernate auto-generates SQL
+
+🧠 Learnings
+Minimum config = 3 (URL, username, password)
+Most asked = ddl-auto behavior
+update is safest for development
+Never use create in production ❌
+
+
+📘 SQL Initialization Properties (SCN)
+
+📌 Concept
+Controls when and how data.sql runs in Spring Boot
+
+⚙️ Properties
+
+🔹 1. spring.jpa.defer-datasource-initialization=true
+👉 Ensures correct order:
+Hibernate creates tables → THEN data.sql runs
+
+✔️ Prevents “table not found” error
+
+🔹 2. spring.sql.init.mode=always
+👉 Forces execution of data.sql on startup
+✔️ Runs every time app starts
+❌ Without this → may not execute
+
+🔹 3. spring.sql.init.data-locations=classpath:data.sql
+👉 Tells Spring:
+Where your SQL file is located
+
+✔️ Default = src/main/resources/data.sql
+
+🔄 Flow
+App Start
+   ↓
+Tables created (Hibernate)
+   ↓
+data.sql executed
+   ↓
+Data inserted
+
+
+🔥 Key Points
+defer → fixes execution order
+mode=always → ensures execution
+data-locations → file path config
+
+🧠 Learnings
+Use all 3 together for smooth setup
+Most startup SQL errors come from wrong order
+Default location usually doesn’t need config
+
+
+
+📘 Spring Data JPA – Annotations (SCN)
+
+📌 Concept
+Annotations define:
+How Java class maps to DB
+How fields behave
+Two types here:
+JPA annotations → DB mapping
+Lombok annotations → reduce boilerplate
+
+🧩 Annotations Breakdown
+
+🔹 1. @Entity
+📌 Concept
+Marks class as DB table
+📌 Example
+@Entity
+class Employee {}
+
+👉 Without this → JPA will ignore class ❌
+
+🔹 2. @Table
+📌 Concept
+Specifies table name
+@Table(name = "employees")
+
+👉 If not used:
+Table name = class name
+
+🔹 3. @Id
+📌 Concept
+Marks Primary Key
+@Id
+private int id;
+
+👉 Mandatory for every entity
+
+🔹 4. @GeneratedValue
+📌 Concept
+Auto-generates ID
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+
+📌 Types
+Strategy
+Meaning
+IDENTITY
+Auto-increment (MySQL) ✅
+AUTO
+Default
+SEQUENCE
+Uses DB sequence
+TABLE
+Uses separate table
+
+
+🔹 5. @Column
+📌 Concept
+Maps field → column
+@Column(name = "emp_name", nullable = false)
+private String name;
+
+📌 Use
+Rename column
+Add constraints
+
+🔹 6. @CreationTimestamp
+📌 Concept
+Auto sets created time
+@CreationTimestamp
+private LocalDateTime createdAt;
+
+👉 Managed by Hibernate
+
+🔹 7. @Data (Lombok)
+📌 Concept
+Generates:
+Getter
+Setter
+toString()
+equals() & hashCode()
+@Data
+class Employee {}
+
+
+🔹 8. @Builder (Lombok)
+📌 Concept
+Implements Builder Pattern
+@Builder
+Employee emp = Employee.builder()
+        .name("Vipul")
+        .build();
+
+👉 Cleaner object creation
+
+💻 Complete Example
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "employees")
+@Data
+@Builder
+public class Employee {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @Column(name = "emp_name", nullable = false)
+    private String name;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+}
+
+
+🔥 Key Points (Interview)
+@Entity → class becomes table
+@Id → mandatory primary key
+@GeneratedValue → auto ID generation
+@Column → customize column
+@CreationTimestamp → auto timestamp
+Lombok reduces boilerplate
+
+🧠 Learnings
+Always define @Id
+Prefer IDENTITY for MySQL
+Use Lombok for cleaner code
+@Column is optional but useful
+Hibernate handles timestamps automatically
+
+⚠️ Reality Check
+@Data can be risky in large apps (because of equals/hashCode)
+Avoid using it blindly in entities (interview bonus point 🔥)
+
+📘 @Table, @UniqueConstraint, @Index (SCN)
+
+📌 Concept
+@Table → defines table name + constraints + indexes
+
+🧩 Your Code
+@Table(
+    name="product_table",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "title_price_unique", columnNames = {"title_x","price"})
+    },
+    indexes = {
+        @Index(name="sku_index", columnList = "sku")
+    }
+)
+
+
+🔹 1. @Table(name="product_table")
+👉 Maps:
+Entity → product_table
+
+
+🔹 2. @UniqueConstraint
+👉 Ensures:
+(title_x + price) must be unique
+
+❌ Duplicate combination not allowed
+
+🔹 3. @Index
+👉 Creates index on:
+sku column
+
+✔️ Faster search queries
+❌ Slightly slower inserts
+
+🔥 Key Points
+@Table → table config
+@UniqueConstraint → prevents duplicate data
+@Index → improves performance
+
+🧠 Learnings
+Use unique for data integrity
+Use index for speed
+Unique constraint automatically creates index
+
+
+🧾 Hibernate – Key Features (SCN Format)
+
+1. 🧠 Concept
+Hibernate is an ORM (Object Relational Mapping) framework that maps Java objects to database tables and handles DB operations automatically.
+
+2. ⚙️ Core Features
+🔹 1. ORM (Object Relational Mapping)
+Maps Java class ↔ Table
+Maps Object ↔ Row
+Removes manual SQL handling
+
+🔹 2. Database Independence (Dialect)
+Works with multiple DBs (MySQL, Oracle, etc.)
+Uses Dialect to generate DB-specific SQL
+Easy DB switching without code change
+
+🔹 3. Automatic Table Creation
+Can auto-create/update tables using:
+spring.jpa.hibernate.ddl-auto=update
+
+
+
+🔹 4. Caching Mechanism
+Improves performance by reducing DB hits
+Cache Type
+Scope
+First Level Cache
+Session (default)
+Second Level Cache
+SessionFactory
+
+
+🔹 5. HQL (Hibernate Query Language)
+Object-oriented query language
+Uses class names instead of table names
+FROM Employee WHERE salary > 50000
+
+
+🔹 6. Lazy & Eager Loading
+Lazy → Load data when needed (default)
+Eager → Load immediately
+
+🔹 7. Transaction Management
+Ensures ACID properties
+Works with JDBC / JTA
+
+🔹 8. CRUD Operations Simplified
+No need to write SQL
+session.save(obj);
+session.get(Employee.class, id);
+session.update(obj);
+session.delete(obj);
+
+
+🔹 9. Associations Mapping
+Supports relationships:
+One-to-One
+One-to-Many
+Many-to-One
+Many-to-Many
+
+🔹 10. Annotation-Based Configuration
+Replaces XML config
+@Entity
+@Table(name="employee")
+
+
+3. 🚀 Approach (How Hibernate Works)
+Create Entity class
+Configure DB connection
+Use SessionFactory
+Perform operations using Session
+Commit transaction
+
+4. 💻 Code Example
+Session session = sessionFactory.openSession();
+Transaction tx = session.beginTransaction();
+
+Employee emp = new Employee();
+emp.setName("Vipul");
+
+session.save(emp);
+
+tx.commit();
+session.close();
+
+
+5. 🎯 Key Points
+Reduces boilerplate JDBC code
+Improves performance using caching
+Database independent
+Uses HQL instead of SQL
+Handles relationships easily
+
+6. 📌 Learnings
+Hibernate abstracts DB complexity
+Best for large applications with complex relationships
+Understanding Session + Cache + Mapping is crucial
+
+
