@@ -1,0 +1,115 @@
+
+📘 Sorting in Spring Data JPA
+
+1️⃣ Concept
+Sorting = retrieving data in ordered form based on a field.
+👉 Two main ways:
+Using Sort class (dynamic, flexible)
+Using method naming (OrderBy) (static, fixed)
+
+2️⃣ Approach
+✔️ Approach 1: Using Sort Class (Dynamic)
+Sorting decided at runtime
+Can pass field name + direction dynamically
+
+✔️ Approach 2: Using Query Method (OrderBy)
+Sorting fixed in method name
+No runtime flexibility
+
+3️⃣ Code
+
+🔹 A. Using Sort Class
+Repository (no extra method needed)
+List<ProductEntity> findAll(Sort sort);
+
+
+Service / Controller usage
+import org.springframework.data.domain.Sort;
+
+@GetMapping("/sorted")
+public List<ProductEntity> getSortedProducts() {
+    return productRepository.findAll(Sort.by("price").ascending());
+}
+
+
+Descending
+return productRepository.findAll(Sort.by("price").descending());
+
+
+Multiple fields
+return productRepository.findAll(
+    Sort.by("price").descending()
+        .and(Sort.by("quantity").ascending())
+);
+
+
+🔹 B. Using Query Method (OrderBy)
+Repository
+List<ProductEntity> findByOrderByPriceAsc();
+List<ProductEntity> findByOrderByPriceDesc();
+
+
+Controller
+@GetMapping("/sort-asc")
+public List<ProductEntity> getAsc() {
+    return productRepository.findByOrderByPriceAsc();
+}
+
+@GetMapping("/sort-desc")
+public List<ProductEntity> getDesc() {
+    return productRepository.findByOrderByPriceDesc();
+}
+
+
+4️⃣ Key Points
+🔑 Sort Class
+Dynamic sorting ✅
+Can sort by multiple fields ✅
+Cleaner for APIs with query params
+Uses:
+Sort.by("field").ascending()
+
+
+🔑 Query Method (OrderBy)
+Static sorting ❌ (fixed at compile time)
+Method name becomes long
+Case-sensitive keywords:
+OrderBy + FieldName + Asc/Desc
+
+
+5️⃣ Learnings / Interview Insights
+⭐ When to use what?
+Use Case
+Best Choice
+Dynamic sorting (API param)
+Sort class
+Simple fixed sorting
+OrderBy method
+Multiple fields sorting
+Sort class
+
+
+⭐ Common Mistake (you faced this)
+findByOrderByprice() ❌
+findByOrderByPriceAsc() ✅
+
+👉 Field name must match entity exactly
+
+🚀 Bonus (Very Important)
+Dynamic sorting via API param
+@GetMapping("/products")
+public List<ProductEntity> getProducts(
+        @RequestParam String sortBy,
+        @RequestParam String direction) {
+
+    Sort sort = direction.equals("asc") ?
+            Sort.by(sortBy).ascending() :
+            Sort.by(sortBy).descending();
+
+    return productRepository.findAll(sort);
+}
+
+👉 API:
+/products?sortBy=price&direction=desc
+
+
