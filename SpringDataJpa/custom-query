@@ -1,0 +1,103 @@
+🧾 Spring Data JPA – Custom Query using @Query (SCN Format)
+
+1. 🧠 Concept
+@Query is used in Spring Data JPA to define custom queries manually when derived query methods are not enough.
+👉 Supports:
+JPQL (Entity-based)
+Native SQL (Table-based)
+
+2. ⚙️ Core Syntax
+🔹 JPQL (Default)
+@Query("SELECT u FROM User u WHERE u.name = :name")
+User findByName(@Param("name") String name);
+
+🔹 Native SQL
+@Query(value = "SELECT * FROM user_table WHERE name = ?1", nativeQuery = true)
+User findUser(String name);
+
+
+3. 📌 Rules for @Query
+
+🔹 1. JPQL Uses Entity Names (NOT table names)
+❌ Wrong:
+SELECT * FROM user_table
+
+✅ Correct:
+SELECT u FROM User u
+
+
+🔹 2. Use Entity Field Names (NOT column names)
+❌ Wrong:
+WHERE user_name = :name
+
+✅ Correct:
+WHERE u.name = :name
+
+
+🔹 3. Parameter Binding
+✔ Named Parameters
+@Query("SELECT u FROM User u WHERE u.email = :email")
+User getByEmail(@Param("email") String email);
+
+✔ Positional Parameters
+@Query("SELECT u FROM User u WHERE u.email = ?1")
+User getByEmail(String email);
+
+
+🔹 4. SELECT Queries Return Matching Type
+@Query("SELECT u FROM User u")
+List<User> findAllUsers();
+
+
+🔹 5. UPDATE / DELETE Needs @Modifying
+@Modifying
+@Query("UPDATE User u SET u.name = :name WHERE u.id = :id")
+void updateName(@Param("id") Long id, @Param("name") String name);
+
+
+🔹 6. Use @Transactional for Modifying Queries
+@Transactional
+@Modifying
+@Query("DELETE FROM User u WHERE u.id = :id")
+void deleteUser(Long id);
+
+
+🔹 7. Native Query When Using SQL
+@Query(value = "SELECT * FROM user_table WHERE age > ?1", nativeQuery = true)
+List<User> findByAge(int age);
+
+
+🔹 8. Alias is Mandatory in JPQL
+SELECT u FROM User u
+
+
+4. 🚀 Approach
+Decide JPQL or Native SQL
+Write query using entity or table
+Bind parameters (:name or ?1)
+Add @Modifying if update/delete
+Ensure correct return type
+
+5. 💻 Examples
+@Query("SELECT p FROM Product p WHERE p.price > :price")
+List<Product> getExpensiveProducts(@Param("price") double price);
+
+@Query(value = "SELECT * FROM product_table WHERE title = ?1", nativeQuery = true)
+List<Product> findByTitle(String title);
+
+
+6. 🎯 Key Points
+@Query = custom SQL/JPQL
+JPQL → entity-based
+Native → table-based
+Use @Modifying for update/delete
+Use @Param for named binding
+Prefer JPQL unless SQL is required
+
+7. 📌 Learnings
+Use derived queries for simple logic
+Use @Query for complex filtering
+Most interview mistakes = mixing table vs entity names
+Always match return type with query result
+
+
