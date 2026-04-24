@@ -1,8 +1,6 @@
-# ⚙️ Spring Boot Notes
-
 > Documenting my Spring Boot learning with practical concepts, clean code, and real-world backend practices.
 
----
+# ⚙️ Spring Boot Notes
 
 ## 🚀 About
 
