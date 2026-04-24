@@ -1,0 +1,99 @@
+🧠 Projection in Spring Data JPA (SCN Format)
+📌 Concept
+Projection = Fetch only required fields instead of the entire entity.
+Helps reduce:
+Memory usage
+Query execution time
+Used when you don’t need full entity data
+
+⚙️ Approach
+🔹 Types of Projections
+Type
+Description
+Interface-based
+Uses interface with getter methods
+Class-based (DTO)
+Uses custom class with constructor
+Dynamic Projection
+Decide projection at runtime
+
+
+💻 Code
+1. ✅ Interface-Based Projection (Most Common)
+public interface ProductView {
+    String getTitle();
+    double getPrice();
+}
+
+Repository:
+List<ProductView> findByPriceGreaterThan(double price);
+
+👉 Hibernate returns only title & price
+
+2. ✅ Class-Based Projection (DTO)
+public class ProductDTO {
+    private String title;
+    private double price;
+
+    public ProductDTO(String title, double price) {
+        this.title = title;
+        this.price = price;
+    }
+}
+
+Repository:
+@Query("SELECT new com.example.ProductDTO(p.title, p.price) FROM Product p")
+List<ProductDTO> getProducts();
+
+
+3. ✅ Dynamic Projection
+<T> List<T> findByTitle(String title, Class<T> type);
+
+Usage:
+repo.findByTitle("Laptop", ProductView.class);
+repo.findByTitle("Laptop", ProductDTO.class);
+
+
+🔑 Key Points
+Projection avoids fetching unnecessary columns
+Works with:
+Derived queries
+JPQL (@Query)
+Interface-based:
+No constructor needed
+Faster & cleaner
+DTO-based:
+More control
+Needed for complex logic
+
+⚠️ Common Mistakes
+❌ Getter names not matching entity fields
+❌ Missing constructor in DTO
+❌ Using projection but still fetching full entity (wrong query)
+❌ Nested projection confusion
+
+🧩 When to Use
+Situation
+Use
+Only few fields needed
+Interface Projection
+Custom response object
+DTO Projection
+Flexible return type
+Dynamic Projection
+
+
+🎯 Learnings / Interview Angle
+Q: Why use projection instead of entity?
+👉 Fetching full entity is expensive → projection improves performance
+Q: Which is better: Interface or DTO?
+👉 Interface = simple cases
+👉 DTO = complex queries / transformations
+
+🚀 Bonus Tip
+Projection is heavily used in:
+REST APIs (return limited data)
+Pagination + sorting
+Microservices (optimize payload size)
+
+
