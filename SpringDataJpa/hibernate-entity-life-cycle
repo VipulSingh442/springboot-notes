@@ -1,0 +1,380 @@
+🧠 1. Hibernate Entity Lifecycle (SCN)
+📌 Concept
+An Entity (POJO mapped to DB table) moves through different states during its life.
+
+🔄 Lifecycle States
+State
+Meaning
+Transient
+Object created using new, not in DB
+Persistent
+Managed by Hibernate, synced with DB
+Detached
+Was persistent, but no longer managed
+Removed
+Marked for deletion
+
+
+⚙️ Approach (Flow)
+Transient → Persistent → Detached → Removed
+
+
+💻 Code Example
+Product p = new Product();   // Transient
+
+entityManager.persist(p);    // Persistent
+
+entityManager.detach(p);     // Detached
+
+entityManager.remove(p);     // Removed
+
+
+🔑 Key Methods (EntityManager)
+Method
+Purpose
+persist()
+Save new entity
+merge()
+Reattach/update detached entity
+remove()
+Delete entity
+find()
+Fetch entity
+detach()
+Remove from persistence context
+flush()
+Sync with DB immediately
+
+
+🎯 Learnings
+Persistent state = auto DB sync
+Detached objects are NOT tracked
+merge() returns new managed object (important!)
+
+🧠 2. Persistence Context (First-Level Cache)
+📌 Concept
+Persistence Context = cache where Hibernate stores managed entities
+Also called First-Level Cache
+
+⚙️ Behavior
+One per transaction
+Tracks changes automatically (Dirty Checking)
+Avoids duplicate DB queries
+
+💻 Example
+Product p1 = entityManager.find(Product.class, 1);
+Product p2 = entityManager.find(Product.class, 1);
+
+// Only ONE query executed
+
+
+🔑 Key Points
+Same object instance returned
+Changes auto-saved at commit
+Improves performance
+
+⚠️ Important Methods
+Method
+Use
+clear()
+Clears persistence context
+contains()
+Check if entity is managed
+flush()
+Force DB sync
+
+
+🎯 Learnings
+Core of Hibernate optimization
+Works behind the scenes → very important for interviews
+
+🧠 3. @Transactional (Spring)
+📌 Concept
+Ensures atomic execution of DB operations
+Either all succeed OR all fail (rollback)
+
+💻 Usage
+@Transactional
+public void createProduct() {
+    repo.save(p1);
+    repo.save(p2);
+}
+
+
+🔑 Important Attributes
+@Transactional(
+    readOnly = true,
+    propagation = Propagation.REQUIRED,
+    isolation = Isolation.READ_COMMITTED,
+    rollbackFor = Exception.class
+)
+
+
+⚙️ Key Options
+Attribute
+Meaning
+readOnly
+Optimize read operations
+propagation
+Transaction behavior
+isolation
+Data consistency level
+rollbackFor
+Specify rollback condition
+
+
+🔁 Propagation Types (Important)
+Type
+Meaning
+REQUIRED
+Default, join existing or create new
+REQUIRES_NEW
+Always new transaction
+SUPPORTS
+Runs if transaction exists
+NOT_SUPPORTED
+Runs without transaction
+
+
+🎯 Learnings
+Works with Persistence Context
+Transaction commit → triggers DB sync
+Without it → data may not persist properly
+
+🧠 4. Important Hibernate / JPA Annotations
+📌 Core Entity Annotations
+Annotation
+Purpose
+@Entity
+Marks class as DB entity
+@Table
+Specify table name
+@Id
+Primary key
+@GeneratedValue
+Auto-generate ID
+
+
+📌 Column Mapping
+Annotation
+Purpose
+@Column
+Customize column
+@Transient
+Ignore field
+@Enumerated
+Enum mapping
+
+
+📌 Lifecycle Callback Annotations
+👉 Run automatically during entity lifecycle
+Annotation
+When Called
+@PrePersist
+Before insert
+@PostPersist
+After insert
+@PreUpdate
+Before update
+@PostUpdate
+After update
+@PreRemove
+Before delete
+@PostRemove
+After delete
+@PostLoad
+After fetch
+
+
+💻 Example
+@Entity
+public class Product {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @PrePersist
+    public void beforeSave() {
+        System.out.println("Saving...");
+    }
+
+    @PostLoad
+    public void afterFetch() {
+        System.out.println("Loaded...");
+    }
+}
+
+
+🔑 Key Points
+Callback methods must be:
+void
+No arguments
+Used for:
+Auditing
+Logging
+Auto timestamps
+
+🔥 FINAL CONNECTION (Very Important)
+🧩 How Everything Works Together
+@Transactional starts transaction
+Persistence Context is created
+Entity becomes Persistent
+Changes tracked (Dirty Checking)
+On commit → Hibernate executes SQL
+Lifecycle callbacks trigger automatically
+
+🎯 Interview Summary (Quick Answer)
+👉 Entity Lifecycle = states of entity (Transient → Persistent → Detached → Removed)
+👉 Persistence Context = cache that manages entities
+👉 @Transactional = ensures atomic DB operations
+👉 Annotations = define mapping + lifecycle behavior
+
+
+
+Good instinct—there are a few high-value points that usually get missed. Here are concise add-on notes to complete your understanding 👇
+
+🔥 Important Missing Points (Quick Notes)
+🧠 1. Dirty Checking (Core Hibernate Feature)
+📌 Concept
+Hibernate automatically detects changes in Persistent entities
+No need to call update()
+⚙️ How it works
+Hibernate keeps a snapshot
+On transaction commit → compares → generates SQL
+💻 Example
+Product p = entityManager.find(Product.class, 1);
+p.setPrice(500);  // No save()
+
+// On commit → UPDATE query runs automatically
+
+🎯 Key Point
+👉 Works only in Persistent state
+
+🧠 2. Flush vs Commit (Very Important)
+Feature
+Flush
+Commit
+Meaning
+Sync to DB
+Finalize transaction
+DB Query
+Yes
+Yes
+Rollback possible
+Yes
+No
+
+📌 Note
+flush() ≠ commit
+Data can still rollback after flush
+
+🧠 3. Detach vs Clear
+Method
+Effect
+detach(entity)
+Removes single entity
+clear()
+Clears entire persistence context
+
+👉 After detach → no dirty checking
+
+🧠 4. Merge Behavior (Tricky Interview Point ⚠️)
+Product detached = new Product();
+Product managed = entityManager.merge(detached);
+
+📌 Important
+merge() returns new managed object
+Original object is still detached
+👉 Many candidates get this wrong
+
+🧠 5. ReadOnly Transactions Optimization
+@Transactional(readOnly = true)
+
+📌 Benefits
+Skips dirty checking
+Improves performance
+👉 Use for GET APIs
+
+🧠 6. Lazy vs Eager Loading (Lifecycle Impact)
+Type
+Behavior
+LAZY
+Load when needed
+EAGER
+Load immediately
+
+⚠️ Problem
+👉 Lazy loading outside transaction → LazyInitializationException
+
+🧠 7. Open Session in View (OSIV)
+📌 Concept
+Keeps session open till view layer
+⚠️ Issue
+Can hide lazy loading problems
+Not recommended for production-heavy apps
+
+🧠 8. Cascade Types (Lifecycle Link)
+📌 Concept
+Operations on parent affect child
+Type
+Meaning
+PERSIST
+Save child automatically
+MERGE
+Merge child
+REMOVE
+Delete child
+ALL
+Everything
+
+
+🧠 9. Orphan Removal
+@OneToMany(orphanRemoval = true)
+
+👉 If child removed from collection → deleted from DB
+
+🧠 10. Transaction Boundary Rule ⚠️
+👉 Persistence Context lives inside transaction
+No transaction → no proper lifecycle management
+Always wrap DB logic in @Transactional
+
+🧠 11. Exception Handling Rule
+📌 Important
+Only unchecked exceptions trigger rollback by default
+@Transactional(rollbackFor = Exception.class)
+
+👉 Needed for checked exceptions
+
+🧠 12. N+1 Query Problem
+📌 Problem
+One query for parent + multiple for children
+💡 Fix
+Use JOIN FETCH
+Use projections
+
+🧠 13. Entity Equals & HashCode ⚠️
+📌 Rule
+Use ID-based equality
+👉 Wrong implementation → bugs in persistence context
+
+🧠 14. ID Generation Strategy Impact
+Strategy
+Behavior
+IDENTITY
+Insert immediately
+SEQUENCE
+Can batch
+AUTO
+Hibernate decides
+
+👉 Affects performance + lifecycle timing
+
+🎯 Final Takeaway
+If you remember these 5 → you're solid:
+Dirty Checking
+Persistence Context scope
+merge() behavior
+Flush vs Commit
+Lazy loading + transaction
+
