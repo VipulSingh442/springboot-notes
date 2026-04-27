@@ -1,0 +1,513 @@
+📌 One-to-One Mapping (JPA / Hibernate)
+🔹 Concept
+A One-to-One relationship means:
+One entity is associated with exactly one instance of another entity.
+Example:
+User ↔ Profile
+Person ↔ Passport
+👉 Each record in Table A maps to one and only one record in Table B.
+
+🔹 Types of One-to-One Mapping
+1. Unidirectional
+Only one entity knows about the relationship.
+👉 Example:
+User → Profile
+(Profile does NOT know User)
+
+
+2. Bidirectional
+Both entities reference each other.
+👉 Example:
+User ↔ Profile
+
+
+🔹 Approaches to Implement
+✅ 1. Using Foreign Key (Most Common)
+One table contains a foreign key of the other.
+
+✅ 2. Using Shared Primary Key
+Both tables share the same primary key.
+
+🔹 Approach 1: Foreign Key Mapping
+🧩 Example (Unidirectional)
+Entity 1: User
+@Entity
+public class User {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    private String name;
+
+    @OneToOne
+    @JoinColumn(name = "profile_id") // FK column
+    private Profile profile;
+}
+
+
+Entity 2: Profile
+@Entity
+public class Profile {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    private String bio;
+}
+
+
+🔹 Important Annotations
+Annotation
+Purpose
+@OneToOne
+Defines relationship
+@JoinColumn
+Specifies foreign key column
+mappedBy
+Used in bidirectional mapping
+cascade
+Propagates operations
+fetch
+Defines loading strategy
+
+
+🔹 Bidirectional Mapping Example
+User (Owner Side)
+@OneToOne
+@JoinColumn(name = "profile_id")
+private Profile profile;
+
+
+Profile (Inverse Side)
+@OneToOne(mappedBy = "profile")
+private User user;
+
+
+🔹 Fetch Types
+Type
+Meaning
+EAGER (default)
+Loads immediately
+LAZY
+Loads only when needed
+
+@OneToOne(fetch = FetchType.LAZY)
+
+⚠️ Important
+Lazy loading in OneToOne may need proxy handling.
+
+🔹 Cascade Types
+@OneToOne(cascade = CascadeType.ALL)
+
+Cascade
+Meaning
+PERSIST
+Save child automatically
+MERGE
+Update child
+REMOVE
+Delete child
+ALL
+All operations
+
+
+🔹 Approach 2: Shared Primary Key
+📌 When to Use
+When both entities are tightly coupled (e.g., User ↔ Profile)
+
+Example
+User
+@Entity
+public class User {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    private String name;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Profile profile;
+}
+
+
+Profile
+@Entity
+public class Profile {
+
+    @Id
+    private Long id;
+
+    private String bio;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
+    private User user;
+}
+
+
+🔹 Key Differences
+Feature
+Foreign Key
+Shared PK
+Flexibility
+High
+Low
+Coupling
+Loose
+Tight
+Complexity
+Simple
+Moderate
+
+
+🔹 Best Practices
+Prefer foreign key mapping for flexibility.
+Use bidirectional mapping only when needed.
+Avoid unnecessary EAGER loading.
+Use cascade carefully (especially REMOVE).
+Always define owning side correctly.
+
+🔹 Common Mistakes
+❌ Forgetting mappedBy in bidirectional mapping
+❌ Infinite recursion in JSON (use @JsonIgnore)
+❌ Using EAGER unnecessarily
+❌ Not handling cascade properly
+
+🔹 Real-World Examples
+User ↔ Profile
+Person ↔ Passport
+Order ↔ Invoice
+
+🔹 Learnings / Interview Tips
+Default fetch type for @OneToOne = EAGER
+Owner side = entity with @JoinColumn
+mappedBy = inverse side (no DB column)
+Shared PK uses @MapsId
+One-to-One can be replaced with One-to-Many (rare cases for flexibility)
+
+Here are your Structured Clean Notes (SCN) for One-to-Many & Many-to-One (JPA / Hibernate) — clean, complete, and interview-focused 👇
+
+📌 One-to-Many & Many-to-One Mapping
+
+🔹 Concept
+✅ One-to-Many (1 : N)
+One entity → multiple entities
+Example: User → Orders
+👉 One user can have many orders
+
+✅ Many-to-One (N : 1)
+Many entities → one entity
+Example: Orders → User
+👉 Many orders belong to one user
+
+🔹 Core Insight ⭐
+@OneToMany  = Parent → Children
+@ManyToOne  = Child → Parent
+
+👉 They represent the same relationship from opposite sides
+
+📌 ER Diagram (Proper)
+[User] —— ◇Has◇ —— [Order]
+   (1)              (N)
+
+1 User → N Orders
+1 Order → 1 User
+
+📌 JPA Mapping
+
+🔹 Many-to-One (MOST IMPORTANT ✅)
+👉 Always the owner side
+👉 Foreign key exists here
+🧩 Example
+@Entity
+class Order {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id") // FK
+    private User user;
+}
+
+
+🔹 One-to-Many
+👉 Inverse side (usually)
+🧩 Example (Bidirectional)
+@Entity
+class User {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @OneToMany(mappedBy = "user")
+    private List<Order> orders;
+}
+
+
+🔹 Unidirectional One-to-Many (Avoid ⚠️)
+@OneToMany
+@JoinColumn(name = "user_id")
+private List<Order> orders;
+
+👉 Problems:
+Extra updates
+Less efficient
+Not recommended in interviews
+
+📌 Database Representation
+🧩 Order Table (FK present here)
+Order
++----+---------+
+| id | user_id |
++----+---------+
+
+🧩 User Table
+User
++----+------+
+| id | name |
++----+------+
+
+👉 FK always in Many side (child)
+
+📌 Important Annotations
+Annotation
+Use
+@OneToMany
+Parent side
+@ManyToOne
+Child side
+@JoinColumn
+Defines FK
+mappedBy
+Inverse side
+cascade
+Propagate ops
+fetch
+Loading strategy
+
+
+📌 Fetch Type
+Mapping
+Default Fetch
+@ManyToOne
+EAGER ⚠️
+@OneToMany
+LAZY ✅
+
+
+📌 Cascade Example
+@OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+
+👉 Operations propagate:
+Save
+Delete
+Update
+
+📌 Best Practices ✅
+Always prefer ManyToOne as owner
+Use bidirectional mapping only if needed
+Keep @OneToMany as LAZY
+Avoid unidirectional OneToMany
+Maintain both sides manually in code
+
+📌 Common Mistakes ❌
+Putting @JoinColumn on wrong side
+Forgetting mappedBy
+Using EAGER unnecessarily
+Not syncing both sides
+
+📌 OneToMany vs ManyToOne (Quick Table)
+Feature
+OneToMany
+ManyToOne
+Direction
+Parent → Children
+Child → Parent
+Owner
+❌ No
+✅ Yes
+FK Location
+❌ No
+✅ Yes
+Default Fetch
+LAZY
+EAGER
+
+
+📌 Real-World Examples
+User → Orders
+Department → Employees
+Category → Products
+
+📌 Interview Learnings 🚀
+FK always in Many side
+@ManyToOne = owner
+mappedBy avoids extra column
+Default fetch difference is important
+Unidirectional OneToMany = not preferred
+
+🔹 One-Line Answer (Very Important)
+One-to-Many means one entity is related to many others, while Many-to-One means many entities are related to one; both represent the same relationship but from different perspectives.
+
+Here are your Structured Clean Notes (SCN) for Many-to-Many Mapping (JPA / Hibernate) — simple, exam-ready, and interview-focused 👇
+
+📌 Many-to-Many Mapping
+
+🔹 Concept
+✅ Many-to-Many (N : N)
+Many entities relate to many other entities
+👉 Example:
+Student ↔ Course
+One student can enroll in many courses
+One course can have many students
+
+🔹 Core Idea ⭐
+Many ↔ Many = Requires a JOIN TABLE
+
+👉 Direct FK cannot handle this
+👉 So we use a third table (junction table)
+
+📌 ER Diagram
+[Student] —— ◇Enrolls◇ —— [Course]
+    (N)                    (N)
+
+
+🔹 With Join Table (Important)
+Student_Course
++------------+------------+
+| student_id | course_id  |
++------------+------------+
+
+
+📌 JPA Mapping
+
+🔹 Owning Side (IMPORTANT ⭐)
+👉 Only one side is owner
+@Entity
+class Student {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @ManyToMany
+    @JoinTable(
+        name = "student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private List<Course> courses;
+}
+
+
+🔹 Inverse Side
+@Entity
+class Course {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @ManyToMany(mappedBy = "courses")
+    private List<Student> students;
+}
+
+
+📌 Key Annotations
+Annotation
+Purpose
+@ManyToMany
+Defines relationship
+@JoinTable
+Defines join table
+joinColumns
+FK of owner
+inverseJoinColumns
+FK of other side
+mappedBy
+Inverse side
+
+
+📌 Ownership Rule ⭐
+Owner = side with @JoinTable
+
+Controls insertion into join table
+Only one owner allowed
+
+📌 Fetch Type
+Mapping
+Default
+@ManyToMany
+LAZY ✅
+
+
+📌 Cascade
+@ManyToMany(cascade = CascadeType.ALL)
+
+⚠️ Be careful:
+REMOVE can delete unintended data
+
+📌 Database Representation
+Student
++----+------+
+| id | name |
++----+------+
+
+Course
++----+-------+
+| id | title |
++----+-------+
+
+Join Table
++------------+------------+
+| student_id | course_id  |
++------------+------------+
+
+
+📌 Best Practices ✅
+Prefer bidirectional only if needed
+Use Set instead of List (avoid duplicates)
+Avoid CascadeType.REMOVE
+Use explicit join table name
+Keep fetch LAZY
+
+📌 Common Mistakes ❌
+Forgetting mappedBy
+Using two owners ❌
+Not maintaining both sides
+Using EAGER (performance issue)
+
+📌 Advanced Insight ⭐
+👉 In real projects, Many-to-Many is often converted to two One-to-Many
+Why?
+Because join table may need extra fields like:
+enrollmentDate
+status
+
+Example:
+Student → Enrollment ← Course
+
+👉 Enrollment becomes a separate entity
+
+📌 Real-World Examples
+Student ↔ Course
+User ↔ Role
+Actor ↔ Movie
+
+📌 Interview Learnings 🚀
+Requires join table
+No direct FK in main tables
+Owner controls join table
+Avoid ManyToMany in complex systems
+Prefer intermediate entity
+
+🔹 One-Line Answer 🎯
+Many-to-Many mapping represents a relationship where multiple entities are associated with multiple others and is implemented using a join table containing foreign keys of both entities.
+
