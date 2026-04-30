@@ -1,0 +1,141 @@
+🧩 1. Cascading (JPA/Hibernate)
+📌 Concept
+Cascading means operations on a parent entity automatically apply to its child entities.
+👉 Example:
+If you save a User, its Orders should also get saved automatically.
+
+⚙️ Approach
+Use cascade attribute in relationships:
+@OneToOne
+@OneToMany
+@ManyToOne
+@ManyToMany
+Types of Cascade:
+Type
+Meaning
+PERSIST
+Save child when parent is saved
+MERGE
+Update child when parent is updated
+REMOVE
+Delete child when parent is deleted
+REFRESH
+Refresh child from DB
+DETACH
+Detach child from session
+ALL
+Apply all operations
+
+
+💻 Code
+@Entity
+class User {
+    @Id
+    private Long id;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Order> orders;
+}
+
+@Entity
+class Order {
+    @Id
+    private Long id;
+
+    @ManyToOne
+    private User user;
+}
+
+
+🔑 Key Points
+Without cascade → you must manually save child entities
+CascadeType.ALL is common but can be risky (especially DELETE)
+Use carefully in bi-directional relationships
+
+📘 Learnings
+Cascading reduces boilerplate code
+Think: “Parent controls lifecycle of child”
+
+🔄 2. Transactional (@Transactional)
+📌 Concept
+A transaction ensures all DB operations succeed or fail together (ACID).
+👉 If one operation fails → everything rolls back.
+
+⚙️ Approach
+Use @Transactional on:
+Service class (preferred)
+Or method level
+
+💻 Code
+@Service
+class PaymentService {
+
+    @Transactional
+    public void transferMoney() {
+        debitAccount();
+        creditAccount();
+    }
+}
+
+
+🔑 Key Points
+If exception occurs → rollback
+Default: rollback on RuntimeException only
+Can customize:
+@Transactional(rollbackFor = Exception.class)
+
+Avoid using in Controller layer ❌
+Best practice: Service layer ✅
+
+📘 Learnings
+Ensures data consistency
+Critical for banking, payments, bookings
+
+🧠 3. Dirty Checking (Hibernate)
+📌 Concept
+Hibernate automatically detects changes in entity objects and updates DB without explicit save().
+👉 You just modify object → Hibernate tracks → DB updated at transaction end.
+
+⚙️ Approach
+Happens inside Persistence Context (Session)
+Works only when:
+Entity is managed
+Inside a transaction
+
+💻 Code
+@Transactional
+public void updateUser(Long id) {
+    User user = entityManager.find(User.class, id);
+    user.setName("Vipul");  // No save() call
+}
+
+👉 Hibernate automatically runs:
+UPDATE user SET name = 'Vipul' WHERE id = ?
+
+
+🔑 Key Points
+No explicit save() needed
+Works only inside transaction
+Hibernate compares old vs new state
+
+📘 Learnings
+Reduces boilerplate updates
+Important for performance and clean code
+
+🔥 Final Connection (Very Important)
+Concept
+Role
+Cascading
+Controls related entity operations
+Transactional
+Ensures atomicity
+Dirty Checking
+Auto updates changed entities
+
+👉 Real-world flow:
+@Transactional starts
+You modify entity → Dirty Checking tracks
+Cascade handles related entities
+Transaction commits → all changes saved
+
+
