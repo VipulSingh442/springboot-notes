@@ -1,0 +1,203 @@
+📦 1. Fetch Type (EAGER vs LAZY)
+📌 Concept
+Defines when related entities are loaded from the database.
+
+⚙️ Approach
+Types:
+Fetch Type
+Behavior
+EAGER
+Load immediately with parent
+LAZY
+Load only when accessed
+
+
+💻 Code
+@Entity
+class User {
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Order> orders;
+}
+
+
+🔑 Key Points
+Default:
+@OneToMany → LAZY ✅
+@ManyToOne → EAGER ⚠️
+LAZY uses proxy objects
+Accessing LAZY outside transaction → ❌ LazyInitializationException
+
+📘 Learnings
+Prefer LAZY by default
+Use EAGER only when always needed
+
+🧹 2. Orphan Removal
+📌 Concept
+Deletes child entity if it is removed from parent collection.
+👉 Not just DB delete — triggered by removing from Java object.
+
+⚙️ Approach
+Use orphanRemoval = true
+
+💻 Code
+@Entity
+class User {
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Order> orders;
+}
+
+user.getOrders().remove(order); // triggers DELETE in DB
+
+
+🔑 Key Points
+Works with collection relationships
+Different from CascadeType.REMOVE
+Helps avoid orphan records
+
+📘 Learnings
+Think: “If child is not linked → delete it”
+
+🐢 3. N+1 Query Problem
+📌 Concept
+Occurs when Hibernate runs:
+1 query for parent
+N queries for each child
+👉 Leads to performance issues
+
+⚙️ Approach
+Problem Example:
+List<User> users = userRepo.findAll();
+
+for(User u : users) {
+    System.out.println(u.getOrders()); // triggers N queries
+}
+
+
+💻 Generated Queries
+SELECT * FROM user;
+SELECT * FROM orders WHERE user_id = 1;
+SELECT * FROM orders WHERE user_id = 2;
+...
+
+
+🔑 Key Points
+Happens mostly with LAZY loading
+Very common in real projects ⚠️
+
+📘 Learnings
+Must optimize for scalability
+
+⚡ 4. N+1 Query Optimization
+📌 Concept
+Reduce multiple queries into single optimized query
+
+⚙️ Approach
+✅ 1. Fetch Join (Best)
+@Query("SELECT u FROM User u JOIN FETCH u.orders")
+List<User> findAllUsersWithOrders();
+
+
+✅ 2. Entity Graph
+@EntityGraph(attributePaths = {"orders"})
+List<User> findAll();
+
+
+✅ 3. Batch Fetching
+spring.jpa.properties.hibernate.default_batch_fetch_size=10
+
+
+🔑 Key Points
+Fetch Join → most powerful
+Avoid blindly switching to EAGER ❌
+Always monitor queries
+
+📘 Learnings
+Performance = key in backend
+Always think in SQL, not just Java
+
+🔗 5. JPQL vs Native Query (IMPORTANT)
+📌 Concept
+Two ways to write queries in Spring Data JPA
+
+⚙️ Approach
+Type
+Description
+JPQL
+Works on Entity objects
+Native
+Works on actual SQL
+
+
+💻 Code
+// JPQL
+@Query("SELECT u FROM User u WHERE u.name = :name")
+
+// Native
+@Query(value = "SELECT * FROM user WHERE name = ?", nativeQuery = true)
+
+
+🔑 Key Points
+JPQL is DB independent ✅
+Native is more powerful but DB dependent ⚠️
+
+📘 Learnings
+Use JPQL for most cases
+Native when needed (complex queries)
+
+🧠 6. DTO Projection (Very Important for Performance)
+📌 Concept
+Fetch only required data instead of full entity
+
+⚙️ Approach
+
+💻 Code
+@Query("SELECT new com.dto.UserDTO(u.name, u.email) FROM User u")
+List<UserDTO> getUsers();
+
+
+🔑 Key Points
+Avoids unnecessary data loading
+Improves performance
+Best for APIs
+
+📘 Learnings
+Never expose full entities in APIs
+
+⚠️ 7. LazyInitializationException
+📌 Concept
+Occurs when LAZY data accessed outside transaction
+
+💻 Example
+User user = userRepo.findById(id).get();
+user.getOrders().size(); // ❌ outside transaction
+
+
+🔑 Key Points
+Happens when session is closed
+Common beginner mistake
+
+📘 Fixes
+Use @Transactional
+Use Fetch Join
+Use DTO projection
+
+🔥 FINAL BIG PICTURE
+🧩 How Everything Connects
+Concept
+Role
+Fetch Type
+When data loads
+Orphan Removal
+Child lifecycle cleanup
+N+1
+Performance problem
+Optimization
+Fix performance
+DTO
+Reduce data load
+
+
+🚀 Real Interview Insight
+If you say this → strong impression:
+“I prefer LAZY loading, avoid N+1 using fetch joins, and use DTO projections for API performance.”
+
